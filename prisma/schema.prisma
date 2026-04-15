@@ -1,0 +1,290 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum UserRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  IN_REVIEW
+  DONE
+}
+
+enum Priority {
+  URGENT
+  HIGH
+  MEDIUM
+  LOW
+}
+
+// ============================================
+// USER & AUTH
+// ============================================
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Auth sessions
+  sessions Session[]
+
+  // Relations
+  ownedProjects    Project[]           @relation("ProjectOwner")
+  projectMembers   ProjectMember[]
+  createdTasks     Task[]              @relation("TaskCreator")
+  taskAssignees    TaskAssignee[]
+  comments         Comment[]
+  activityLogs     ActivityLog[]
+
+  @@index([email])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  refreshToken String   @unique
+  userAgent    String?
+  ipAddress    String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([refreshToken])
+}
+
+// ============================================
+// PROJECTS
+// ============================================
+
+model Project {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  slug        String    @unique
+  color       String    @default("#3B82F6")
+  dueDate     DateTime?
+  completedAt DateTime?
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  ownerId String
+  owner   User   @relation("ProjectOwner", fields: [ownerId], references: [id])
+
+  members  ProjectMember[]
+  tasks    Task[]
+  labels   Label[]
+
+  @@index([ownerId, deletedAt])
+  @@index([slug])
+}
+
+// ============================================
+// PROJECT MEMBERS
+// ============================================
+
+model ProjectMember {
+  id        String   @id @default(cuid())
+  role      UserRole @default(MEMBER)
+  joinedAt  DateTime @default(now())
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([userId])
+  @@index([projectId])
+}
+
+// ============================================
+// TASKS
+// ============================================
+
+model Task {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  status      TaskStatus @default(TODO)
+  priority    Priority   @default(MEDIUM)
+  dueDate     DateTime?
+  startDate   DateTime?
+  completedAt DateTime?
+  deletedAt   DateTime?
+  position    Int        @default(0)
+  isRecurring Boolean    @default(false)
+  recurrence  Json?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdById String
+  createdBy   User   @relation("TaskCreator", fields: [createdById], references: [id])
+
+  subtasks    Subtask[]
+  assignees   TaskAssignee[]
+  labels      TaskLabel[]
+  comments    Comment[]
+
+  dependsOn  TaskDependency[] @relation("TaskDependent")
+  dependents  TaskDependency[] @relation("TaskDependsOn")
+
+  @@index([projectId, status])
+  @@index([projectId, deletedAt])
+  @@index([dueDate])
+}
+
+// ============================================
+// TASK ASSIGNEES
+// ============================================
+
+model TaskAssignee {
+  assignedAt DateTime @default(now())
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, userId])
+  @@index([userId])
+}
+
+// ============================================
+// SUBTASKS
+// ============================================
+
+model Subtask {
+  id        String   @id @default(cuid())
+  title     String
+  isDone    Boolean  @default(false)
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
+
+// ============================================
+// LABELS
+// ============================================
+
+model Label {
+  id        String   @id @default(cuid())
+  name      String
+  color     String   @default("#3B82F6")
+  createdAt DateTime @default(now())
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  tasks TaskLabel[]
+
+  @@unique([projectId, name])
+  @@index([projectId])
+}
+
+model TaskLabel {
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  labelId String
+  label   Label  @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, labelId])
+  @@index([labelId])
+}
+
+// ============================================
+// COMMENTS
+// ============================================
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  editedAt  DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  @@index([taskId])
+  @@index([authorId])
+}
+
+// ============================================
+// TASK DEPENDENCIES
+// ============================================
+
+model TaskDependency {
+  id   String @id @default(cuid())
+  type String @default("FS") // Finish-to-Start
+
+  dependentId String
+  dependent   Task  @relation("TaskDependent", fields: [dependentId], references: [id], onDelete: Cascade)
+
+  dependsOnId String
+  dependsOn   Task  @relation("TaskDependsOn", fields: [dependsOnId], references: [id], onDelete: Cascade)
+
+  @@unique([dependentId, dependsOnId])
+  @@index([dependsOnId])
+}
+
+// ============================================
+// ACTIVITY LOG
+// ============================================
+
+model ActivityLog {
+  id         String   @id @default(cuid())
+  action     String
+  entityType String
+  entityId   String
+  oldData    Json?
+  newData    Json?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
+}
