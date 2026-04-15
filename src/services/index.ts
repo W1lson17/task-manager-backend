@@ -26,3 +26,10 @@ export {
   removeAssignee,
   findAssignees,
 } from './task.service.js';
+export {
+  create as createComment,
+  findAll as findAllComments,
+  findOne as findOneComment,
+  update as updateComment,
+  remove as removeComment,
+} from './comment.service.js';

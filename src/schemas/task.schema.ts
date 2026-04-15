@@ -5,15 +5,15 @@ export const createTaskSchema = z.object({
   description: z.string().max(5000).optional(),
   status: z.enum(['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE']).optional(),
   priority: z.enum(['URGENT', 'HIGH', 'MEDIUM', 'LOW']).optional(),
-  dueDate: z.string().datetime().optional(),
-  startDate: z.string().datetime().optional(),
+  dueDate: z.iso.datetime().optional(),
+  startDate: z.iso.datetime().optional(),
   position: z.number().int().optional(),
   isRecurring: z.boolean().optional(),
   recurrence: z
     .object({
       frequency: z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']),
       interval: z.number().int().min(1).optional(),
-      endDate: z.string().datetime().optional(),
+      endDate: z.iso.datetime().optional(),
     })
     .optional(),
 });
@@ -23,16 +23,16 @@ export const updateTaskSchema = z.object({
   description: z.string().max(5000).optional().nullable(),
   status: z.enum(['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE']).optional(),
   priority: z.enum(['URGENT', 'HIGH', 'MEDIUM', 'LOW']).optional(),
-  dueDate: z.string().datetime().optional().nullable(),
-  startDate: z.string().datetime().optional().nullable(),
-  completedAt: z.string().datetime().optional().nullable(),
+  dueDate: z.iso.datetime().optional().nullable(),
+  startDate: z.iso.datetime().optional().nullable(),
+  completedAt: z.iso.datetime().optional().nullable(),
   position: z.number().int().optional(),
   isRecurring: z.boolean().optional(),
   recurrence: z
     .object({
       frequency: z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']),
       interval: z.number().int().min(1).optional(),
-      endDate: z.string().datetime().optional(),
+      endDate: z.iso.datetime().optional(),
     })
     .optional()
     .nullable(),

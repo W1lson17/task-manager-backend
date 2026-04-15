@@ -1,3 +1,41 @@
-export * from './auth.controller.js';
-export * from './project.controller.js';
-export * from './task.controller.js';
+export {
+  register,
+  loginUser,
+  refreshAccessTokens,
+  logoutUser,
+  logoutAllSessions,
+  me,
+} from './auth.controller.js';
+export {
+  getAll,
+  getOne,
+  createProject,
+  updateProject,
+  deleteProject,
+  restoreProject,
+  addMember,
+  updateRole,
+  removeMember,
+} from './project.controller.js';
+export {
+  create as createTask,
+  findAll as findAllTasks,
+  findOne as findOneTask,
+  update as updateTask,
+  remove as removeTask,
+  restore as restoreTask,
+  createSubtask,
+  findSubtasks,
+  updateSubtask,
+  deleteSubtask,
+  addAssignee,
+  removeAssignee,
+  findAssignees,
+} from './task.controller.js';
+export {
+  create as createComment,
+  findAll as findAllComments,
+  findOne as findOneComment,
+  update as updateComment,
+  remove as removeComment,
+} from './comment.controller.js';
