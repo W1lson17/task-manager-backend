@@ -18,11 +18,11 @@ export const updateProjectSchema = z.object({
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/)
     .optional(),
-  dueDate: z.string().datetime().optional().nullable(),
+  dueDate: z.iso.datetime().optional().nullable(),
 });
 
 export const addMemberSchema = z.object({
-  email: z.string().email(),
+  email: z.email(),
   role: z.enum(['ADMIN', 'MEMBER', 'VIEWER']).default('MEMBER'),
 });
 
