@@ -38,6 +38,11 @@ export default [
     },
   },
   {
-    ignores: ['dist/**', 'node_modules/**', '*.config.js'],
+    ignores: [
+      'dist/**',
+      'node_modules/**',
+      '*.config.js',
+      'src/generated/**', // Prisma generated files
+    ],
   },
 ];
