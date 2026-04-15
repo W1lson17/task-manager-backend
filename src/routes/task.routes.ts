@@ -8,31 +8,22 @@ const router: ExpressRouter = Router();
 router.use(authenticate);
 
 // Tasks CRUD
-router.post('/projects/:projectId/tasks', taskController.create);
-router.get('/projects/:projectId/tasks', taskController.findAll);
-router.get('/projects/:projectId/tasks/:taskId', taskController.findOne);
-router.patch('/projects/:projectId/tasks/:taskId', taskController.update);
-router.delete('/projects/:projectId/tasks/:taskId', taskController.remove);
-router.post('/projects/:projectId/tasks/:taskId/restore', taskController.restore);
+router.post('/:projectId/tasks', taskController.create);
+router.get('/:projectId/tasks', taskController.findAll);
+router.get('/:projectId/tasks/:taskId', taskController.findOne);
+router.patch('/:projectId/tasks/:taskId', taskController.update);
+router.delete('/:projectId/tasks/:taskId', taskController.remove);
+router.post('/:projectId/tasks/:taskId/restore', taskController.restore);
 
 // Subtasks
-router.get('/projects/:projectId/tasks/:taskId/subtasks', taskController.findSubtasks);
-router.post('/projects/:projectId/tasks/:taskId/subtasks', taskController.createSubtask);
-router.patch(
-  '/projects/:projectId/tasks/:taskId/subtasks/:subtaskId',
-  taskController.updateSubtask
-);
-router.delete(
-  '/projects/:projectId/tasks/:taskId/subtasks/:subtaskId',
-  taskController.deleteSubtask
-);
+router.get('/:projectId/tasks/:taskId/subtasks', taskController.findSubtasks);
+router.post('/:projectId/tasks/:taskId/subtasks', taskController.createSubtask);
+router.patch('/:projectId/tasks/:taskId/subtasks/:subtaskId', taskController.updateSubtask);
+router.delete('/:projectId/tasks/:taskId/subtasks/:subtaskId', taskController.deleteSubtask);
 
 // Assignees
-router.get('/projects/:projectId/tasks/:taskId/assignees', taskController.findAssignees);
-router.post('/projects/:projectId/tasks/:taskId/assignees', taskController.addAssignee);
-router.delete(
-  '/projects/:projectId/tasks/:taskId/assignees/:assigneeId',
-  taskController.removeAssignee
-);
+router.get('/:projectId/tasks/:taskId/assignees', taskController.findAssignees);
+router.post('/:projectId/tasks/:taskId/assignees', taskController.addAssignee);
+router.delete('/:projectId/tasks/:taskId/assignees/:assigneeId', taskController.removeAssignee);
 
 export default router;

@@ -7,6 +7,6 @@ const router: ExpressRouter = Router();
 
 router.use('/auth', authRoutes);
 router.use('/projects', projectRoutes);
-router.use('/', taskRoutes);
+router.use('/projects', taskRoutes);
 
 export default router;
