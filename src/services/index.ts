@@ -1,2 +1,28 @@
-export * from './auth.service.js';
-export * from './project.service.js';
+export { signup, login, logout, logoutAll, refreshTokens, getCurrentUser } from './auth.service.js';
+export {
+  create as createProject,
+  findAll as findAllProjects,
+  findOne as findOneProject,
+  findBySlug,
+  update as updateProject,
+  remove as removeProject,
+  restore as restoreProject,
+  addMemberToProject,
+  updateMemberRole,
+  removeMemberFromProject,
+} from './project.service.js';
+export {
+  create as createTask,
+  findAll as findAllTasks,
+  findOne as findOneTask,
+  update as updateTask,
+  remove as removeTask,
+  restore as restoreTask,
+  createSubtask,
+  findSubtasks,
+  updateSubtask,
+  deleteSubtask,
+  addAssignee,
+  removeAssignee,
+  findAssignees,
+} from './task.service.js';
