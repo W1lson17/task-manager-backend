@@ -15,13 +15,16 @@ export const errorHandler = (
 
   // Handle AppError
   if (err instanceof AppError) {
-    res.status(err.statusCode).json({
-      error: {
-        code: err.code,
-        message: err.message,
-        ...(err.details && { details: err.details }),
-      },
-    });
+    const response: Record<string, unknown> = {
+      code: err.code,
+      message: err.message,
+    };
+
+    if (err.details) {
+      response.details = err.details;
+    }
+
+    res.status(err.statusCode).json({ error: response });
     return;
   }
 

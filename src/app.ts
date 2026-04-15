@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import { config } from './config/index.js';
 import { errorHandler, globalRateLimiter } from './middlewares/index.js';
 import { successResponse } from './utils/index.js';
+import apiRoutes from './routes/index.js';
 
 export const createApp = (): Application => {
   const app = express();
@@ -29,9 +30,8 @@ export const createApp = (): Application => {
     res.json(successResponse({ status: 'ok', timestamp: new Date().toISOString() }));
   });
 
-  // API routes will be added here
-  // app.use('/api/v1/auth', authRoutes);
-  // app.use('/api/v1/projects', projectRoutes);
+  // API routes
+  app.use('/api/v1', apiRoutes);
 
   // 404 handler
   app.use((_req: Request, _res: Response, next) => {
