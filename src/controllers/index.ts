@@ -40,3 +40,13 @@ export {
   remove as removeComment,
 } from './comment.controller.js';
 export { getProjectActivities, getEntityActivities } from './activity.controller.js';
+export {
+  create as createLabel,
+  findAll as findAllLabels,
+  findOne as findOneLabel,
+  update as updateLabel,
+  remove as removeLabel,
+  addLabel,
+  removeLabel as removeTaskLabel,
+  findLabels as findTaskLabels,
+} from './label.controller.js';
