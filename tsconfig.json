@@ -20,6 +20,13 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+  "include": [
+    "src/**/*",
+    "vitest.config.integration.ts",
+    "vitest.setup.integration.ts",
+    "vitest.globalSetup.ts",
+    "prisma/seed.integration.ts"
+  ],
+  "exclude": ["node_modules", "dist"],
+  "types": ["vitest-environment-prisma-postgres"]
 }
