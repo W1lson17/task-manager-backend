@@ -1,5 +1,5 @@
 import { prisma } from '../config/database.js';
-import { Prisma } from '../generated/prisma/client.js';
+import type { TaskStatusInput, PriorityInput } from '../schemas/task.schema.js';
 
 export const createTask = async (
   projectId: string,
@@ -7,8 +7,8 @@ export const createTask = async (
   data: {
     title: string;
     description?: string;
-    status?: string;
-    priority?: string;
+    status?: TaskStatusInput;
+    priority?: PriorityInput;
     dueDate?: Date;
     startDate?: Date;
     position?: number;
@@ -22,8 +22,8 @@ export const createTask = async (
       createdById,
       title: data.title,
       description: data.description,
-      status: (data.status as 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE') || 'TODO',
-      priority: (data.priority as 'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW') || 'MEDIUM',
+      status: data.status || 'TODO',
+      priority: data.priority || 'MEDIUM',
       dueDate: data.dueDate,
       startDate: data.startDate,
       position: data.position ?? 0,
@@ -168,8 +168,8 @@ export const updateTask = async (
   data: {
     title?: string;
     description?: string | null;
-    status?: string;
-    priority?: string;
+    status?: TaskStatusInput;
+    priority?: PriorityInput;
     dueDate?: Date | null;
     startDate?: Date | null;
     completedAt?: Date | null;
@@ -190,7 +190,7 @@ export const updateTask = async (
   if (data.position !== undefined) updateData.position = data.position;
   if (data.isRecurring !== undefined) updateData.isRecurring = data.isRecurring;
   if (data.recurrence !== undefined) {
-    updateData.recurrence = data.recurrence ?? Prisma.JsonNull;
+    updateData.recurrence = data.recurrence ?? null;
   }
 
   return prisma.task.update({
@@ -239,6 +239,5 @@ export const canUserModifyTask = async (taskId: string, userId: string) => {
   const member = task.project.members[0];
   if (!member) return false;
 
-  // OWNER, ADMIN, MEMBER can modify
   return ['OWNER', 'ADMIN', 'MEMBER'].includes(member.role);
 };

@@ -1,5 +1,6 @@
 import * as projectRepo from '../repositories/project.repository.js';
 import * as memberRepo from '../repositories/member.repository.js';
+import * as activityRepo from '../repositories/activity.repository.js';
 import { ConflictError, ForbiddenError, NotFoundError } from '../utils/index.js';
 import { prisma } from '../config/database.js';
 import type {
@@ -7,13 +8,22 @@ import type {
   UpdateProjectInput,
   AddMemberInput,
 } from '../schemas/project.schema.js';
-import type { UserRole } from '../generated/prisma/enums.js';
 
 export const create = async (userId: string, data: CreateProjectInput) => {
   const project = await projectRepo.createProject({
     ...data,
     ownerId: userId,
   });
+
+  // Log activity
+  await activityRepo.log({
+    action: 'CREATE',
+    entityType: 'Project',
+    entityId: project.id,
+    userId,
+    newData: { name: project.name },
+  });
+
   return project;
 };
 
@@ -65,7 +75,24 @@ export const update = async (id: string, userId: string, data: UpdateProjectInpu
     throw new ForbiddenError('Only owner or admin can update project');
   }
 
+  // Get old data for logging
+  const oldProject = await projectRepo.findProjectById(id);
+  const oldData = oldProject
+    ? { name: oldProject.name, description: oldProject.description }
+    : undefined;
+
   const project = await projectRepo.updateProject(id, data);
+
+  // Log activity
+  await activityRepo.log({
+    action: 'UPDATE',
+    entityType: 'Project',
+    entityId: project.id,
+    userId,
+    oldData,
+    newData: { name: project.name, description: project.description },
+  });
+
   return project;
 };
 
@@ -76,6 +103,16 @@ export const remove = async (id: string, userId: string) => {
   }
 
   const project = await projectRepo.deleteProject(id);
+
+  // Log activity
+  await activityRepo.log({
+    action: 'DELETE',
+    entityType: 'Project',
+    entityId: id,
+    userId,
+    oldData: { name: project.name },
+  });
+
   return project;
 };
 
@@ -86,6 +123,16 @@ export const restore = async (id: string, userId: string) => {
   }
 
   const project = await projectRepo.restoreProject(id);
+
+  // Log activity
+  await activityRepo.log({
+    action: 'RESTORE',
+    entityType: 'Project',
+    entityId: id,
+    userId,
+    newData: { name: project.name },
+  });
+
   return project;
 };
 
@@ -109,7 +156,17 @@ export const addMemberToProject = async (
     throw new NotFoundError('User');
   }
 
-  const member = await memberRepo.addMember(projectId, user.id, data.role as UserRole);
+  const member = await memberRepo.addMember(projectId, user.id, data.role);
+
+  // Log activity
+  await activityRepo.log({
+    action: 'ADD_MEMBER',
+    entityType: 'Project',
+    entityId: projectId,
+    userId,
+    newData: { memberId: member.id, email: data.email, role: data.role },
+  });
+
   return member;
 };
 
@@ -129,7 +186,18 @@ export const updateMemberRole = async (
     throw new ForbiddenError('Cannot change owner role');
   }
 
-  const member = await memberRepo.updateMemberRole(projectId, targetUserId, newRole as UserRole);
+  const member = await memberRepo.updateMemberRole(projectId, targetUserId, newRole);
+
+  // Log activity
+  await activityRepo.log({
+    action: 'UPDATE_ROLE',
+    entityType: 'Project',
+    entityId: projectId,
+    userId,
+    oldData: { targetUserId, role: targetRole },
+    newData: { targetUserId, role: newRole },
+  });
+
   return member;
 };
 
@@ -151,5 +219,15 @@ export const removeMemberFromProject = async (
   }
 
   const member = await memberRepo.removeMember(projectId, targetUserId);
+
+  // Log activity
+  await activityRepo.log({
+    action: 'REMOVE_MEMBER',
+    entityType: 'Project',
+    entityId: projectId,
+    userId,
+    oldData: { removedUserId: targetUserId, role: targetRole },
+  });
+
   return member;
 };

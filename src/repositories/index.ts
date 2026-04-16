@@ -6,3 +6,4 @@ export * from './task.repository.js';
 export * from './subtask.repository.js';
 export * from './assignee.repository.js';
 export * from './comment.repository.js';
+export * from './activity.repository.js';

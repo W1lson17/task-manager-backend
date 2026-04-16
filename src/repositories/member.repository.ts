@@ -1,7 +1,11 @@
 import { prisma } from '../config/database.js';
-import type { UserRole } from '../generated/prisma/enums.js';
+import type { MemberRoleInput } from '../schemas/project.schema.js';
 
-export const addMember = async (projectId: string, userId: string, role: UserRole = 'MEMBER') => {
+export const addMember = async (
+  projectId: string,
+  userId: string,
+  role: MemberRoleInput = 'MEMBER'
+) => {
   return prisma.projectMember.create({
     data: {
       projectId,
@@ -61,7 +65,11 @@ export const findMemberByEmail = async (projectId: string, email: string) => {
   });
 };
 
-export const updateMemberRole = async (projectId: string, userId: string, role: UserRole) => {
+export const updateMemberRole = async (
+  projectId: string,
+  userId: string,
+  role: MemberRoleInput
+) => {
   return prisma.projectMember.update({
     where: {
       projectId_userId: {
