@@ -38,3 +38,13 @@ export {
   findByProject as findProjectActivities,
   findByEntity as findEntityActivities,
 } from './activity.service.js';
+export {
+  create as createLabel,
+  findAll as findAllLabels,
+  findOne as findOneLabel,
+  update as updateLabel,
+  remove as removeLabel,
+  addLabelToTask,
+  removeLabelFromTask,
+  findTaskLabels,
+} from './label.service.js';
