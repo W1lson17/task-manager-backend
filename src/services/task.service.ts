@@ -2,6 +2,7 @@ import * as taskRepo from '../repositories/task.repository.js';
 import * as subtaskRepo from '../repositories/subtask.repository.js';
 import * as assigneeRepo from '../repositories/assignee.repository.js';
 import * as projectRepo from '../repositories/project.repository.js';
+import * as activityRepo from '../repositories/activity.repository.js';
 import { ForbiddenError, NotFoundError } from '../utils/index.js';
 import type {
   CreateTaskInput,
@@ -11,13 +12,11 @@ import type {
 } from '../schemas/task.schema.js';
 
 export const create = async (projectId: string, userId: string, data: CreateTaskInput) => {
-  // Check if user is a member
   const role = await projectRepo.getMemberRole(projectId, userId);
   if (!role) {
     throw new ForbiddenError('You are not a member of this project');
   }
 
-  // Only OWNER, ADMIN, MEMBER can create tasks
   if (role === 'VIEWER') {
     throw new ForbiddenError('Viewers cannot create tasks');
   }
@@ -26,6 +25,16 @@ export const create = async (projectId: string, userId: string, data: CreateTask
     ...data,
     dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
     startDate: data.startDate ? new Date(data.startDate) : undefined,
+  });
+
+  // Log activity
+  await activityRepo.log({
+    action: 'CREATE',
+    entityType: 'Task',
+    entityId: task.id,
+    userId,
+    newData: { title: task.title, projectId },
+    metadata: { projectId },
   });
 
   return task;
@@ -38,7 +47,6 @@ export const findAll = async (
   limit: number,
   filters?: { status?: string; priority?: string; search?: string; assignedTo?: string }
 ) => {
-  // Check if user is a member
   const isMember = await projectRepo.isProjectMember(projectId, userId);
   if (!isMember) {
     throw new ForbiddenError('You are not a member of this project');
@@ -48,7 +56,6 @@ export const findAll = async (
 };
 
 export const findOne = async (projectId: string, taskId: string, userId: string) => {
-  // Check if user is a member
   const isMember = await projectRepo.isProjectMember(projectId, userId);
   if (!isMember) {
     throw new ForbiddenError('You are not a member of this project');
@@ -72,7 +79,6 @@ export const update = async (
   userId: string,
   data: UpdateTaskInput
 ) => {
-  // Check permissions
   const canModify = await taskRepo.canUserModifyTask(taskId, userId);
   if (!canModify) {
     throw new ForbiddenError('You do not have permission to modify this task');
@@ -82,6 +88,9 @@ export const update = async (
   if (!task || task.projectId !== projectId) {
     throw new NotFoundError('Task');
   }
+
+  // Log old data
+  const oldData = { title: task.title, status: task.status, priority: task.priority };
 
   const updatedTask = await taskRepo.updateTask(taskId, {
     ...data,
@@ -95,6 +104,21 @@ export const update = async (
           ? new Date(data.completedAt)
           : null
         : undefined,
+  });
+
+  // Log activity
+  await activityRepo.log({
+    action: 'UPDATE',
+    entityType: 'Task',
+    entityId: taskId,
+    userId,
+    oldData,
+    newData: {
+      title: updatedTask.title,
+      status: updatedTask.status,
+      priority: updatedTask.priority,
+    },
+    metadata: { projectId },
   });
 
   return updatedTask;
@@ -111,6 +135,16 @@ export const remove = async (projectId: string, taskId: string, userId: string) 
     throw new NotFoundError('Task');
   }
 
+  // Log activity
+  await activityRepo.log({
+    action: 'DELETE',
+    entityType: 'Task',
+    entityId: taskId,
+    userId,
+    oldData: { title: task.title },
+    metadata: { projectId },
+  });
+
   return taskRepo.deleteTask(taskId);
 };
 
@@ -125,7 +159,19 @@ export const restore = async (projectId: string, taskId: string, userId: string)
     throw new NotFoundError('Task');
   }
 
-  return taskRepo.restoreTask(taskId);
+  const restoredTask = await taskRepo.restoreTask(taskId);
+
+  // Log activity
+  await activityRepo.log({
+    action: 'RESTORE',
+    entityType: 'Task',
+    entityId: taskId,
+    userId,
+    newData: { title: restoredTask.title },
+    metadata: { projectId },
+  });
+
+  return restoredTask;
 };
 
 // Subtasks
@@ -145,7 +191,19 @@ export const createSubtask = async (
     throw new NotFoundError('Task');
   }
 
-  return subtaskRepo.createSubtask(taskId, data);
+  const subtask = await subtaskRepo.createSubtask(taskId, data);
+
+  // Log activity
+  await activityRepo.log({
+    action: 'ADD_SUBTASK',
+    entityType: 'Subtask',
+    entityId: subtask.id,
+    userId,
+    newData: { title: subtask.title, taskId },
+    metadata: { projectId, parentTaskId: taskId },
+  });
+
+  return subtask;
 };
 
 export const findSubtasks = async (projectId: string, taskId: string, userId: string) => {
@@ -174,12 +232,33 @@ export const updateSubtask = async (
     throw new ForbiddenError('You do not have permission to update subtasks');
   }
 
+  const subtask = await subtaskRepo.findSubtaskById(subtaskId);
+  if (!subtask) {
+    throw new NotFoundError('Subtask');
+  }
+
   const isValidSubtask = await subtaskRepo.isSubtaskInTask(subtaskId, taskId);
   if (!isValidSubtask) {
     throw new NotFoundError('Subtask');
   }
 
-  return subtaskRepo.updateSubtask(subtaskId, data);
+  // Log old data
+  const oldData = { title: subtask.title, isDone: subtask.isDone };
+
+  const updatedSubtask = await subtaskRepo.updateSubtask(subtaskId, data);
+
+  // Log activity
+  await activityRepo.log({
+    action: 'UPDATE_SUBTASK',
+    entityType: 'Subtask',
+    entityId: subtaskId,
+    userId,
+    oldData,
+    newData: { title: updatedSubtask.title, isDone: updatedSubtask.isDone },
+    metadata: { parentTaskId: taskId },
+  });
+
+  return updatedSubtask;
 };
 
 export const deleteSubtask = async (
@@ -193,10 +272,25 @@ export const deleteSubtask = async (
     throw new ForbiddenError('You do not have permission to delete subtasks');
   }
 
+  const subtask = await subtaskRepo.findSubtaskById(subtaskId);
+  if (!subtask) {
+    throw new NotFoundError('Subtask');
+  }
+
   const isValidSubtask = await subtaskRepo.isSubtaskInTask(subtaskId, taskId);
   if (!isValidSubtask) {
     throw new NotFoundError('Subtask');
   }
+
+  // Log activity
+  await activityRepo.log({
+    action: 'DELETE_SUBTASK',
+    entityType: 'Subtask',
+    entityId: subtaskId,
+    userId,
+    oldData: { title: subtask.title },
+    metadata: { parentTaskId: taskId },
+  });
 
   return subtaskRepo.deleteSubtask(subtaskId);
 };
@@ -218,7 +312,6 @@ export const addAssignee = async (
     throw new NotFoundError('Task');
   }
 
-  // Check if assignee is a project member
   const isAssigneeMember = await projectRepo.isProjectMember(projectId, assigneeId);
   if (!isAssigneeMember) {
     throw new ForbiddenError('User is not a member of this project');
@@ -229,7 +322,19 @@ export const addAssignee = async (
     throw new ForbiddenError('User is already assigned to this task');
   }
 
-  return assigneeRepo.addAssignee(taskId, assigneeId);
+  const assignee = await assigneeRepo.addAssignee(taskId, assigneeId);
+
+  // Log activity
+  await activityRepo.log({
+    action: 'ADD_ASSIGNEE',
+    entityType: 'Task',
+    entityId: taskId,
+    userId,
+    newData: { assigneeId },
+    metadata: { projectId },
+  });
+
+  return assignee;
 };
 
 export const removeAssignee = async (
@@ -247,6 +352,16 @@ export const removeAssignee = async (
   if (!task || task.projectId !== projectId) {
     throw new NotFoundError('Task');
   }
+
+  // Log activity
+  await activityRepo.log({
+    action: 'REMOVE_ASSIGNEE',
+    entityType: 'Task',
+    entityId: taskId,
+    userId,
+    oldData: { assigneeId },
+    metadata: { projectId },
+  });
 
   return assigneeRepo.removeAssignee(taskId, assigneeId);
 };

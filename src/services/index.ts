@@ -33,3 +33,8 @@ export {
   update as updateComment,
   remove as removeComment,
 } from './comment.service.js';
+export {
+  log as logActivity,
+  findByProject as findProjectActivities,
+  findByEntity as findEntityActivities,
+} from './activity.service.js';

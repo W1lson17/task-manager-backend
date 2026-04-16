@@ -39,3 +39,4 @@ export {
   update as updateComment,
   remove as removeComment,
 } from './comment.controller.js';
+export { getProjectActivities, getEntityActivities } from './activity.controller.js';

@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
+// Member roles enum
+const MemberRole = z.enum(['ADMIN', 'MEMBER', 'VIEWER']);
+export type MemberRoleInput = z.infer<typeof MemberRole>;
+
 export const createProjectSchema = z.object({
   name: z.string().min(1, 'Name is required').max(255),
   description: z.string().max(1000).optional(),
@@ -23,7 +27,7 @@ export const updateProjectSchema = z.object({
 
 export const addMemberSchema = z.object({
   email: z.email(),
-  role: z.enum(['ADMIN', 'MEMBER', 'VIEWER']).default('MEMBER'),
+  role: MemberRole.default('MEMBER'),
 });
 
 export const projectQuerySchema = z.object({

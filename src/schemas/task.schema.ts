@@ -1,10 +1,14 @@
 import { z } from 'zod';
 
+// Task enums - consistent types for use in repositories
+const TaskStatusEnum = z.enum(['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE']);
+const PriorityEnum = z.enum(['URGENT', 'HIGH', 'MEDIUM', 'LOW']);
+
 export const createTaskSchema = z.object({
   title: z.string().min(1).max(255),
   description: z.string().max(5000).optional(),
-  status: z.enum(['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE']).optional(),
-  priority: z.enum(['URGENT', 'HIGH', 'MEDIUM', 'LOW']).optional(),
+  status: TaskStatusEnum.optional(),
+  priority: PriorityEnum.optional(),
   dueDate: z.iso.datetime().optional(),
   startDate: z.iso.datetime().optional(),
   position: z.number().int().optional(),
@@ -21,8 +25,8 @@ export const createTaskSchema = z.object({
 export const updateTaskSchema = z.object({
   title: z.string().min(1).max(255).optional(),
   description: z.string().max(5000).optional().nullable(),
-  status: z.enum(['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE']).optional(),
-  priority: z.enum(['URGENT', 'HIGH', 'MEDIUM', 'LOW']).optional(),
+  status: TaskStatusEnum.optional(),
+  priority: PriorityEnum.optional(),
   dueDate: z.iso.datetime().optional().nullable(),
   startDate: z.iso.datetime().optional().nullable(),
   completedAt: z.iso.datetime().optional().nullable(),
@@ -54,6 +58,9 @@ export const addAssigneeSchema = z.object({
   userId: z.string().min(1),
 });
 
+// Export types for use in repositories
+export type TaskStatusInput = z.infer<typeof TaskStatusEnum>;
+export type PriorityInput = z.infer<typeof PriorityEnum>;
 export type CreateTaskInput = z.infer<typeof createTaskSchema>;
 export type UpdateTaskInput = z.infer<typeof updateTaskSchema>;
 export type CreateSubtaskInput = z.infer<typeof createSubtaskSchema>;
